@@ -23,6 +23,7 @@ fi
 # shellcheck source=/dev/null
 source "$ENV_FILE"
 
+AWS_REGION="${AWS_REGION:-ap-south-1}"
 AWS="aws --region $AWS_REGION"
 
 log()  { echo -e "\n\033[1;32m▶ $*\033[0m"; }

@@ -46,7 +46,7 @@ api.euri.ai  (fetched directly, no NAT Gateway needed)
 aws configure
 # AWS Access Key ID:     <your IAM access key>
 # AWS Secret Access Key: <your IAM secret>
-# Default region name:   us-east-1
+# Default region name:   ap-south-1
 # Default output format: json
 ```
 
@@ -144,20 +144,20 @@ git push origin main   # ← fully automated from here
 
 ```bash
 # Live logs
-aws logs tail /ecs/euri-explorer --follow --region us-east-1
+aws logs tail /ecs/euri-explorer --follow --region ap-south-1
 
 # Service health
 aws ecs describe-services \
   --cluster euri-explorer-cluster \
   --services euri-explorer-service \
-  --region us-east-1 \
+  --region ap-south-1 \
   --query "services[0].{Status:status,Desired:desiredCount,Running:runningCount}"
 
 # ALB target health
 source infrastructure/aws-resources.env
 aws elbv2 describe-target-health \
   --target-group-arn "$TG_ARN" \
-  --region us-east-1 \
+  --region ap-south-1 \
   --query "TargetHealthDescriptions[].{Target:Target.Id,Health:TargetHealth.State}"
 ```
 
@@ -170,7 +170,7 @@ aws ecs update-service \
   --cluster euri-explorer-cluster \
   --service euri-explorer-service \
   --desired-count 3 \
-  --region us-east-1
+  --region ap-south-1
 ```
 
 ---
@@ -183,7 +183,7 @@ aws ecs update-service \
 
 ---
 
-## Cost Estimate (us-east-1, 1 task running 24/7)
+## Cost Estimate (ap-south-1 Mumbai, 1 task running 24/7)
 
 | Resource | ~Monthly cost |
 |---|---|

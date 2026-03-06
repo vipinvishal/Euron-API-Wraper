@@ -26,7 +26,7 @@
 set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-ap-south-1}"
 APP_NAME="euri-explorer"
 CONTAINER_PORT=3000
 
@@ -92,14 +92,14 @@ log "[2/7] Creating security groups..."
 
 ALB_SG=$($AWS ec2 create-security-group \
   --group-name "$APP_NAME-alb-sg" \
-  --description "ALB — allow HTTP/HTTPS from internet" \
+  --description "ALB - allow HTTP/HTTPS from internet" \
   --vpc-id "$VPC_ID" --query GroupId --output text)
 $AWS ec2 authorize-security-group-ingress --group-id "$ALB_SG" --protocol tcp --port 80  --cidr 0.0.0.0/0
 $AWS ec2 authorize-security-group-ingress --group-id "$ALB_SG" --protocol tcp --port 443 --cidr 0.0.0.0/0
 
 ECS_SG=$($AWS ec2 create-security-group \
   --group-name "$APP_NAME-ecs-sg" \
-  --description "ECS tasks — allow only from ALB" \
+  --description "ECS tasks - allow only from ALB" \
   --vpc-id "$VPC_ID" --query GroupId --output text)
 $AWS ec2 authorize-security-group-ingress --group-id "$ECS_SG" \
   --protocol tcp --port "$CONTAINER_PORT" --source-group "$ALB_SG"
@@ -120,18 +120,37 @@ ECR_URI=$($AWS ecr create-repository \
     --repository-names "$APP_NAME" \
     --query "repositories[0].repositoryUri" --output text)
 
+cat > /tmp/ecr-lifecycle.json <<'LIFECYCLE'
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Remove untagged images after 1 day",
+      "selection": {
+        "tagStatus": "untagged",
+        "countType": "sinceImagePushed",
+        "countUnit": "days",
+        "countNumber": 1
+      },
+      "action": { "type": "expire" }
+    },
+    {
+      "rulePriority": 2,
+      "description": "Keep only last 10 images",
+      "selection": {
+        "tagStatus": "any",
+        "countType": "imageCountMoreThan",
+        "countNumber": 10
+      },
+      "action": { "type": "expire" }
+    }
+  ]
+}
+LIFECYCLE
+
 $AWS ecr put-lifecycle-policy \
   --repository-name "$APP_NAME" \
-  --lifecycle-policy-text '{
-    "rules": [
-      {"rulePriority":1,"description":"Remove untagged after 1 day",
-       "selection":{"tagStatus":"untagged","countType":"sinceImagePushed","countUnit":"days","countNumber":1},
-       "action":{"type":"expire"}},
-      {"rulePriority":2,"description":"Keep last 10 tagged images",
-       "selection":{"tagStatus":"tagged","tagPrefixList":[""],"countType":"imageCountMoreThan","countNumber":10},
-       "action":{"type":"expire"}}
-    ]
-  }' > /dev/null
+  --lifecycle-policy-text file:///tmp/ecr-lifecycle.json > /dev/null
 
 echo "  ECR URI: $ECR_URI"
 
@@ -215,11 +234,11 @@ echo "  TG ARN:  $TG_ARN"
 # =============================================================================
 log "[7/7] Creating ECS Cluster + Service..."
 
+# Ensure the ECS service-linked role exists (required on first ECS use in an account)
+$AWS iam create-service-linked-role --aws-service-name ecs.amazonaws.com 2>/dev/null || true
+
 $AWS ecs create-cluster \
   --cluster-name "${APP_NAME}-cluster" \
-  --capacity-providers FARGATE FARGATE_SPOT \
-  --default-capacity-provider-strategy \
-    "capacityProvider=FARGATE,weight=1,base=1" \
   --tags "key=Name,value=${APP_NAME}-cluster" > /dev/null
 
 sed \
