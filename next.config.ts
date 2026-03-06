@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Required for Docker / ECS Fargate deployment
-  output: "standalone",
-
   // Security headers
   async headers() {
     return [
