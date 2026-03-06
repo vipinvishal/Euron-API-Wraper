@@ -1,0 +1,107 @@
+name: Build → Push ECR → Deploy ECS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+# ── Top-level env shared by all jobs ──────────────────────────────────────────
+env:
+  AWS_REGION:       us-east-1
+  ECR_REPOSITORY:   euri-explorer          # must match what setup-aws.sh creates
+  ECS_CLUSTER:      euri-explorer-cluster
+  ECS_SERVICE:      euri-explorer-service
+  CONTAINER_NAME:   euri-explorer
+  IMAGE_TAG:        ${{ github.sha }}
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  build-and-push:
+    name: 🐳 Build & push Docker image
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build-push.outputs.image }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to ECR
+        id: build-push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+          docker build \
+            --cache-from "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            --tag "$IMAGE_URI" \
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            --file Dockerfile \
+            .
+
+          docker push "$IMAGE_URI"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+          echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy to ECS Fargate
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      # Fill placeholders in the task-definition template
+      - name: Render ECS task definition
+        id: render-task-def
+        env:
+          IMAGE_URI:        ${{ needs.build-and-push.outputs.image }}
+          AWS_ACCOUNT_ID:   ${{ secrets.AWS_ACCOUNT_ID }}
+          REDIS_URL:        ${{ secrets.REDIS_URL }}
+        run: |
+          sed \
+            -e "s|<IMAGE_URI>|$IMAGE_URI|g" \
+            -e "s|<AWS_ACCOUNT_ID>|$AWS_ACCOUNT_ID|g" \
+            -e "s|<AWS_REGION>|$AWS_REGION|g" \
+            -e "s|<REDIS_URL>|$REDIS_URL|g" \
+            infrastructure/task-definition.json > /tmp/task-definition-rendered.json
+
+          echo "task-def=/tmp/task-definition-rendered.json" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition:    ${{ steps.render-task-def.outputs.task-def }}
+          service:            ${{ env.ECS_SERVICE }}
+          cluster:            ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Print ALB URL
+        run: |
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names euri-explorer-alb \
+            --query "LoadBalancers[0].DNSName" \
+            --output text 2>/dev/null || echo "ALB not found")
+          echo "✅ Deployment complete. App URL: http://$ALB_DNS"

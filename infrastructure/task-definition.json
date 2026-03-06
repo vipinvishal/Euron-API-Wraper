@@ -1,0 +1,49 @@
+{
+  "family": "euri-explorer",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/euri-explorer-ecs-exec-role",
+  "taskRoleArn":      "arn:aws:iam::<AWS_ACCOUNT_ID>:role/euri-explorer-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "euri-explorer",
+      "image": "<IMAGE_URI>",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV",  "value": "production" },
+        { "name": "PORT",      "value": "3000" },
+        { "name": "HOSTNAME",  "value": "0.0.0.0" },
+        { "name": "REDIS_URL", "value": "<REDIS_URL>" }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:3000/api/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group":         "/ecs/euri-explorer",
+          "awslogs-region":        "<AWS_REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "readonlyRootFilesystem": false,
+      "stopTimeout": 30
+    }
+  ]
+}

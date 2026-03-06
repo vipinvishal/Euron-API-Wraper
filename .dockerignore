@@ -1,0 +1,15 @@
+.git
+.gitignore
+.github
+node_modules
+.next
+out
+Dockerfile
+.dockerignore
+README.md
+infrastructure/
+*.log
+.env
+.env.*
+!.env.example
+npm-debug.log*
