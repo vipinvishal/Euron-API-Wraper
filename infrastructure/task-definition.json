@@ -19,10 +19,9 @@
         }
       ],
       "environment": [
-        { "name": "NODE_ENV",  "value": "production" },
-        { "name": "PORT",      "value": "3000" },
-        { "name": "HOSTNAME",  "value": "0.0.0.0" },
-        { "name": "REDIS_URL", "value": "<REDIS_URL>" }
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT",     "value": "3000"        },
+        { "name": "HOSTNAME", "value": "0.0.0.0"     }
       ],
       "healthCheck": {
         "command": [
@@ -42,7 +41,6 @@
           "awslogs-stream-prefix": "ecs"
         }
       },
-      "readonlyRootFilesystem": false,
       "stopTimeout": 30
     }
   ]

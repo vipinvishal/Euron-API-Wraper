@@ -5,14 +5,13 @@ on:
     branches: [main]
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
-# ── Top-level env shared by all jobs ──────────────────────────────────────────
 env:
-  AWS_REGION:       us-east-1
-  ECR_REPOSITORY:   euri-explorer          # must match what setup-aws.sh creates
-  ECS_CLUSTER:      euri-explorer-cluster
-  ECS_SERVICE:      euri-explorer-service
-  CONTAINER_NAME:   euri-explorer
-  IMAGE_TAG:        ${{ github.sha }}
+  AWS_REGION:     us-east-1
+  ECR_REPOSITORY: euri-explorer
+  ECS_CLUSTER:    euri-explorer-cluster
+  ECS_SERVICE:    euri-explorer-service
+  CONTAINER_NAME: euri-explorer
+  IMAGE_TAG:      ${{ github.sha }}
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
@@ -73,19 +72,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
-      # Fill placeholders in the task-definition template
       - name: Render ECS task definition
         id: render-task-def
         env:
-          IMAGE_URI:        ${{ needs.build-and-push.outputs.image }}
-          AWS_ACCOUNT_ID:   ${{ secrets.AWS_ACCOUNT_ID }}
-          REDIS_URL:        ${{ secrets.REDIS_URL }}
+          IMAGE_URI:      ${{ needs.build-and-push.outputs.image }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
           sed \
             -e "s|<IMAGE_URI>|$IMAGE_URI|g" \
             -e "s|<AWS_ACCOUNT_ID>|$AWS_ACCOUNT_ID|g" \
             -e "s|<AWS_REGION>|$AWS_REGION|g" \
-            -e "s|<REDIS_URL>|$REDIS_URL|g" \
             infrastructure/task-definition.json > /tmp/task-definition-rendered.json
 
           echo "task-def=/tmp/task-definition-rendered.json" >> "$GITHUB_OUTPUT"
@@ -93,9 +89,9 @@ jobs:
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition:    ${{ steps.render-task-def.outputs.task-def }}
-          service:            ${{ env.ECS_SERVICE }}
-          cluster:            ${{ env.ECS_CLUSTER }}
+          task-definition:            ${{ steps.render-task-def.outputs.task-def }}
+          service:                    ${{ env.ECS_SERVICE }}
+          cluster:                    ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
 
       - name: Print ALB URL

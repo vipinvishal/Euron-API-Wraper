@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cacheGet, cacheSet } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
-const EURI_BASE  = "https://api.euri.ai/v1";
-const CACHE_TTL  = 60 * 60; // 1 hour — stored in ElastiCache Redis
+const EURI_BASE = "https://api.euri.ai/v1";
 
 export async function GET(req: NextRequest) {
   const apiKey = req.headers.get("x-api-key");
@@ -16,18 +14,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Cache key scoped to the API key so different users get their own lists
-  const cacheKey = `euri:models:${Buffer.from(apiKey).toString("base64").slice(0, 16)}`;
-
-  // 1. Try Redis cache first (ElastiCache in production)
-  const cached = await cacheGet(cacheKey);
-  if (cached) {
-    return NextResponse.json(JSON.parse(cached), {
-      headers: { "X-Cache": "HIT" },
-    });
-  }
-
-  // 2. Fetch from Euri API
   try {
     const response = await fetch(`${EURI_BASE}/models`, {
       headers: {
@@ -35,7 +21,8 @@ export async function GET(req: NextRequest) {
         "Content-Type": "application/json",
         "api-key": apiKey,
       },
-      cache: "no-store",
+      // Next.js built-in cache — revalidate every hour server-side
+      next: { revalidate: 3600 },
     });
 
     const rawText = await response.text();
@@ -82,10 +69,7 @@ export async function GET(req: NextRequest) {
       data = { object: "list", data: data.models };
     }
 
-    // 3. Write to Redis cache (fire-and-forget)
-    cacheSet(cacheKey, JSON.stringify(data), CACHE_TTL);
-
-    return NextResponse.json(data, { headers: { "X-Cache": "MISS" } });
+    return NextResponse.json(data);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(

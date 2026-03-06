@@ -15,13 +15,17 @@ Amazon ECR (Docker registry)
      │
      │  pulls image
      ▼
-Amazon ECS Fargate (private subnets, 2 AZs)
-     │                    │
-     │ reads/writes        │ HTTP traffic
-     ▼                    ▼
-ElastiCache Redis    Application Load Balancer
-(API response cache) (public subnets, internet-facing)
+Amazon ECS Fargate        ←── Application Load Balancer (internet-facing)
+(public subnets, 2 AZs)       Port 80 → ECS tasks port 3000
+     │
+     │  outbound HTTPS
+     ▼
+api.euri.ai  (fetched directly, no NAT Gateway needed)
 ```
+
+> ECS tasks run in **public subnets** with a public IP, but the security group
+> only allows inbound traffic from the ALB — no direct public access to tasks.
+> Next.js built-in `revalidate` handles server-side caching (no Redis needed).
 
 ---
 
@@ -33,7 +37,6 @@ ElastiCache Redis    Application Load Balancer
 | Docker Desktop | [docs.docker.com](https://docs.docker.com/desktop/mac/) | `docker --version` |
 | Git | pre-installed on macOS | `git --version` |
 | jq | `brew install jq` | `jq --version` |
-| GitHub account | — | — |
 
 ---
 
@@ -47,10 +50,9 @@ aws configure
 # Default output format: json
 ```
 
-Your IAM user needs **AdministratorAccess** (or at minimum permissions for
-EC2, ECR, ECS, ElastiCache, ELB, IAM, CloudWatch, and CloudFormation).
+Your IAM user needs **AdministratorAccess** (or EC2 + ECR + ECS + ELB + IAM + CloudWatch).
 
-Verify it works:
+Verify:
 
 ```bash
 aws sts get-caller-identity
@@ -63,37 +65,28 @@ aws sts get-caller-identity
 ```bash
 cd "/Users/vipinvishal/Desktop/Vipin Codes/Euron Wraper/euri-explorer"
 
-# Initialize git (if not done)
 git init
 git add .
 git commit -m "feat: initial euri-explorer app"
-
-# Create repo on GitHub (using GitHub CLI) — OR create it on github.com and add remote
-gh repo create euri-explorer --public
-# or:
-# git remote add origin https://github.com/YOUR_USERNAME/euri-explorer.git
-
+git remote add origin https://github.com/vipinvishal/Euron-API-Wraper.git
 git branch -M main
 git push -u origin main
 ```
 
 ---
 
-## Step 3 — Provision AWS Infrastructure (one-time)
+## Step 3 — Provision AWS Infrastructure (one-time, ~3 min)
 
 ```bash
 cd "/Users/vipinvishal/Desktop/Vipin Codes/Euron Wraper/euri-explorer"
 chmod +x infrastructure/setup-aws.sh infrastructure/teardown.sh
-
 ./infrastructure/setup-aws.sh
 ```
 
-The script takes about **8–10 minutes** (NAT Gateway + ElastiCache are the slow parts).
-
 When done, it prints:
 - **ALB URL** — your app's public URL
-- **Resource IDs** saved to `infrastructure/aws-resources.env`
-- **GitHub secrets** to add
+- Resource IDs saved to `infrastructure/aws-resources.env`
+- GitHub secrets to add
 
 ---
 
@@ -103,78 +96,62 @@ Go to your repo → **Settings → Secrets and variables → Actions → New rep
 
 | Secret name | Value |
 |---|---|
-| `AWS_ACCESS_KEY_ID` | Your IAM user's access key ID |
-| `AWS_SECRET_ACCESS_KEY` | Your IAM user's secret access key |
-| `AWS_ACCOUNT_ID` | Printed at end of setup-aws.sh (or: `aws sts get-caller-identity --query Account --output text`) |
-| `REDIS_URL` | Printed at end of setup-aws.sh (format: `redis://xxx.cache.amazonaws.com:6379`) |
+| `AWS_ACCESS_KEY_ID` | Your IAM access key ID |
+| `AWS_SECRET_ACCESS_KEY` | Your IAM secret access key |
+| `AWS_ACCOUNT_ID` | Printed by setup script (or: `aws sts get-caller-identity --query Account --output text`) |
+
+That's it — only **3 secrets**. No Redis URL needed.
 
 ---
 
-## Step 5 — Trigger Deployment
-
-Push any code change to `main`:
+## Step 5 — Trigger First Deployment
 
 ```bash
-git add .
-git commit -m "feat: something new"
+git commit --allow-empty -m "chore: trigger first deployment"
 git push origin main
 ```
 
-This triggers the GitHub Action (`.github/workflows/deploy.yml`) which:
-1. Builds a multi-stage Docker image
-2. Pushes it to ECR with the commit SHA as the tag
-3. Also tags it as `latest`
-4. Renders the ECS task definition with the new image URI
-5. Deploys the task definition to ECS Fargate
-6. Waits for the service to reach a stable state
-7. Prints the ALB URL
-
-Monitor the deployment: **GitHub → Actions tab → latest run**
+Watch it at **GitHub → Actions tab**. The pipeline:
+1. Builds the Docker image (layer-cached for speed)
+2. Pushes to ECR with commit SHA tag + `latest`
+3. Renders the ECS task definition with the new image
+4. Deploys to ECS Fargate — zero-downtime rolling update
+5. Prints the ALB URL
 
 ---
 
 ## Step 6 — Verify
 
 ```bash
-# Get your ALB URL
 source infrastructure/aws-resources.env
-echo "http://$ALB_DNS"
 curl http://$ALB_DNS/api/health
 # {"status":"ok","timestamp":"..."}
 ```
 
-Open the ALB URL in your browser — you should see the Euri Explorer app.
-
 ---
 
-## Updating the App
-
-Just push to `main`. GitHub Actions handles the rest.
+## Every Future Deploy
 
 ```bash
-# Make changes, then:
 git add .
-git commit -m "fix: update something"
-git push origin main
+git commit -m "feat: your change"
+git push origin main   # ← fully automated from here
 ```
 
-ECS performs a **rolling update** — zero downtime by default
-(200% max, 100% min healthy in `deployment-configuration`).
-
 ---
 
-## Monitoring & Logs
+## Monitoring
 
 ```bash
-# Live ECS task logs
+# Live logs
 aws logs tail /ecs/euri-explorer --follow --region us-east-1
 
-# ECS service status
+# Service health
 aws ecs describe-services \
   --cluster euri-explorer-cluster \
   --services euri-explorer-service \
   --region us-east-1 \
-  --query "services[0].{Status:status,Desired:desiredCount,Running:runningCount,Pending:pendingCount}"
+  --query "services[0].{Status:status,Desired:desiredCount,Running:runningCount}"
 
 # ALB target health
 source infrastructure/aws-resources.env
@@ -189,7 +166,6 @@ aws elbv2 describe-target-health \
 ## Scaling
 
 ```bash
-# Scale to 3 tasks (horizontal scale)
 aws ecs update-service \
   --cluster euri-explorer-cluster \
   --service euri-explorer-service \
@@ -199,29 +175,25 @@ aws ecs update-service \
 
 ---
 
-## Teardown (Delete All Resources)
+## Teardown
 
 ```bash
 ./infrastructure/teardown.sh
 ```
 
-> This permanently deletes all AWS resources. You will be prompted to confirm.
-
 ---
 
-## Cost Estimate (us-east-1, 1 task 24/7)
+## Cost Estimate (us-east-1, 1 task running 24/7)
 
 | Resource | ~Monthly cost |
 |---|---|
 | ECS Fargate (0.5 vCPU, 1 GB) | ~$15 |
-| ALB | ~$18 |
-| ElastiCache t4g.micro | ~$12 |
-| NAT Gateway | ~$32 (fixed) + data |
-| ECR storage (first 500 MB free) | ~$0 |
+| Application Load Balancer | ~$18 |
 | CloudWatch Logs (30-day retention) | ~$1 |
-| **Total** | **~$78/month** |
+| ECR storage (first 500 MB free) | ~$0 |
+| **Total** | **~$34/month** |
 
-To save cost during development, **run the teardown script** when not in use.
+Compared to the previous Redis setup (~$78/month), this saves **~$44/month** by removing ElastiCache and the NAT Gateway.
 
 ---
 
@@ -229,19 +201,18 @@ To save cost during development, **run the teardown script** when not in use.
 
 ```
 euri-explorer/
-├── Dockerfile                         # Multi-stage build
-├── .dockerignore                      # Docker build exclusions
-├── next.config.ts                     # output: standalone, security headers
-├── lib/redis.ts                       # ElastiCache client (no-op in local dev)
-├── app/api/health/route.ts            # Health check endpoint
-├── app/api/models/route.ts            # Models proxy with Redis caching
+├── Dockerfile                         # Multi-stage build (deps → builder → runner)
+├── .dockerignore
+├── next.config.ts                     # output: standalone + security headers
+├── app/api/health/route.ts            # ALB + Docker health check endpoint
+├── app/api/models/route.ts            # Euri proxy with Next.js revalidate caching
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml                 # GitHub Actions CI/CD pipeline
+│       └── deploy.yml                 # GitHub Actions CI/CD (3 secrets only)
 └── infrastructure/
-    ├── setup-aws.sh                   # One-time AWS provisioning
+    ├── setup-aws.sh                   # One-time AWS provisioning (~3 min)
     ├── task-definition.json           # ECS task definition template
-    ├── teardown.sh                    # Cleanup all AWS resources
+    ├── teardown.sh                    # Delete all AWS resources
     ├── aws-resources.env              # Generated: resource IDs (git-ignored)
     └── README.md                      # This file
 ```
