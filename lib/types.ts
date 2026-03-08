@@ -39,6 +39,10 @@ export type ModelProvider =
   | "stability"
   | "deepseek"
   | "xai"
+  | "sarvam"
+  | "groq"
+  | "alibaba"
+  | "together"
   | "other";
 
 export type ModelCapability =
@@ -167,6 +171,26 @@ export const PROVIDER_INFO: Record<
     label: "xAI",
     color: "text-gray-400",
     bgColor: "bg-gray-500/10",
+  },
+  sarvam: {
+    label: "Sarvam",
+    color: "text-rose-400",
+    bgColor: "bg-rose-500/10",
+  },
+  groq: {
+    label: "Groq",
+    color: "text-orange-400",
+    bgColor: "bg-orange-500/10",
+  },
+  alibaba: {
+    label: "Alibaba",
+    color: "text-red-400",
+    bgColor: "bg-red-500/10",
+  },
+  together: {
+    label: "Together",
+    color: "text-teal-400",
+    bgColor: "bg-teal-500/10",
   },
   other: {
     label: "Other",

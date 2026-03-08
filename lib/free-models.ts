@@ -1,48 +1,46 @@
 /**
- * Models available on the Euron free tier.
- * Source: https://euron.one/euri
- *
- * All other models are considered paid.
+ * Exact Free model IDs from https://euron.one/euri — March 2026
+ * All other models on the platform are Premium (wallet credits required).
  */
 export const FREE_MODEL_IDS = new Set<string>([
-  // OpenAI — free tier
-  "gpt-4o-mini",
+  // OpenAI — Free
+  "gpt-5-nano-2025-08-07",
+  "gpt-5-mini-2025-08-07",
   "gpt-4.1-nano",
-  "gpt-3.5-turbo",
-  "gpt-3.5-turbo-16k",
+  "gpt-4.1-mini",
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-120b",
+  "text-embedding-3-small",
 
-  // Google — Gemini free tier
+  // Google — Free
   "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
-  "gemini-pro",
+  "gemini-2.5-pro",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro-preview-06-05",
+  "gemini-2.5-flash-preview-05-20",
+  "gemini-2.5-flash-lite-preview-06-17",
+  "gemini-3-pro",
+  "gemini-embedding-001",
+  "gemini-3-pro-image-preview",
 
-  // Meta — Llama (open-source, free on Euron)
-  "llama-3.3-70b-instruct",
-  "llama-3.1-405b-instruct",
-  "llama-3.1-70b-instruct",
-  "llama-3.1-8b-instruct",
-  "llama-3-70b-instruct",
-  "llama-3-8b-instruct",
-  "llama-3.2-11b-vision-instruct",
-  "llama-3.2-90b-vision-instruct",
+  // Meta — all Free
+  "llama-4-scout-17b-16e-instruct",
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "llama-guard-4-12b",
 
-  // Mistral — open-source
-  "mistral-7b-instruct",
-  "mixtral-8x7b-instruct",
-  "mixtral-8x22b-instruct",
-  "mistral-small-latest",
+  // Sarvam — Free
+  "sarvam-m",
 
-  // DeepSeek — free on Euron
-  "deepseek-chat",
-  "deepseek-coder",
-  "deepseek-r1",
-  "deepseek-v3",
-  "deepseek-r1-distill-llama-70b",
+  // Groq — all Free
+  "groq/compound",
+  "groq/compound-mini",
 
-  // Google Embeddings
-  "text-embedding-004",
+  // Alibaba — Free
+  "qwen/qwen3-32b",
+
+  // Together — Free
+  "togethercomputer/m2-bert-80m-32k-retrieval",
 ]);
 
 export function isFreModel(modelId: string): boolean {

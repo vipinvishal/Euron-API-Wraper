@@ -1,106 +1,76 @@
 import type { EuriModel } from "./types";
 
 /**
- * Curated list of models known to be available on the Euri API Gateway.
- * Used when the live /v1/models endpoint cannot be reached.
+ * Exact model list from https://euron.one/euri — March 2026
+ * Only these models are shown and accessible via the Euron API Gateway.
  */
 export const FALLBACK_MODELS: EuriModel[] = [
-  // OpenAI — Chat / GPT
-  { id: "gpt-4o", object: "model", owned_by: "openai" },
-  { id: "gpt-4o-mini", object: "model", owned_by: "openai" },
-  { id: "gpt-4-turbo", object: "model", owned_by: "openai" },
-  { id: "gpt-4-turbo-preview", object: "model", owned_by: "openai" },
-  { id: "gpt-4", object: "model", owned_by: "openai" },
-  { id: "gpt-3.5-turbo", object: "model", owned_by: "openai" },
-  { id: "gpt-3.5-turbo-16k", object: "model", owned_by: "openai" },
-  { id: "gpt-4.1-nano", object: "model", owned_by: "openai" },
-  { id: "gpt-4.1-mini", object: "model", owned_by: "openai" },
 
-  // OpenAI — Reasoning
-  { id: "o1", object: "model", owned_by: "openai" },
-  { id: "o1-mini", object: "model", owned_by: "openai" },
-  { id: "o1-preview", object: "model", owned_by: "openai" },
-  { id: "o3-mini", object: "model", owned_by: "openai" },
-
-  // OpenAI — Image
-  { id: "dall-e-3", object: "model", owned_by: "openai" },
-  { id: "dall-e-2", object: "model", owned_by: "openai" },
-
-  // OpenAI — Audio
-  { id: "whisper-1", object: "model", owned_by: "openai" },
-  { id: "tts-1", object: "model", owned_by: "openai" },
-  { id: "tts-1-hd", object: "model", owned_by: "openai" },
-
-  // OpenAI — Embeddings
+  // ── OpenAI (17 models) ────────────────────────────────────────────────────
+  // Free (7)
+  { id: "gpt-5-nano-2025-08-07",  object: "model", owned_by: "openai" },
+  { id: "gpt-5-mini-2025-08-07",  object: "model", owned_by: "openai" },
+  { id: "gpt-4.1-nano",           object: "model", owned_by: "openai" },
+  { id: "gpt-4.1-mini",           object: "model", owned_by: "openai" },
+  { id: "openai/gpt-oss-20b",     object: "model", owned_by: "openai" },
+  { id: "openai/gpt-oss-120b",    object: "model", owned_by: "openai" },
   { id: "text-embedding-3-small", object: "model", owned_by: "openai" },
-  { id: "text-embedding-3-large", object: "model", owned_by: "openai" },
-  { id: "text-embedding-ada-002", object: "model", owned_by: "openai" },
+  // Premium (10)
+  { id: "gpt-4.1",                object: "model", owned_by: "openai" },
+  { id: "gpt-5",                  object: "model", owned_by: "openai" },
+  { id: "gpt-5.1",                object: "model", owned_by: "openai" },
+  { id: "gpt-5-mini",             object: "model", owned_by: "openai" },
+  { id: "gpt-5-nano",             object: "model", owned_by: "openai" },
+  { id: "o3",                     object: "model", owned_by: "openai" },
+  { id: "o4-mini",                object: "model", owned_by: "openai" },
+  { id: "gpt-5.3-instant",        object: "model", owned_by: "openai" },
+  { id: "whisper-large-v3",       object: "model", owned_by: "openai" },
+  { id: "whisper-large-v3-turbo", object: "model", owned_by: "openai" },
 
-  // Anthropic — Claude 3.5
-  { id: "claude-3-5-sonnet-20241022", object: "model", owned_by: "anthropic" },
-  { id: "claude-3-5-haiku-20241022", object: "model", owned_by: "anthropic" },
-  { id: "claude-3-5-sonnet-20240620", object: "model", owned_by: "anthropic" },
+  // ── Google (11 models) ───────────────────────────────────────────────────
+  // Free (9)
+  { id: "gemini-2.0-flash",                      object: "model", owned_by: "google" },
+  { id: "gemini-2.5-pro",                        object: "model", owned_by: "google" },
+  { id: "gemini-2.5-flash",                      object: "model", owned_by: "google" },
+  { id: "gemini-2.5-pro-preview-06-05",          object: "model", owned_by: "google" },
+  { id: "gemini-2.5-flash-preview-05-20",        object: "model", owned_by: "google" },
+  { id: "gemini-2.5-flash-lite-preview-06-17",   object: "model", owned_by: "google" },
+  { id: "gemini-3-pro",                          object: "model", owned_by: "google" },
+  { id: "gemini-embedding-001",                  object: "model", owned_by: "google" },
+  { id: "gemini-3-pro-image-preview",            object: "model", owned_by: "google" },
+  // Premium (2)
+  { id: "gemini-3-flash",                        object: "model", owned_by: "google" },
+  { id: "gemini-3.1-pro",                        object: "model", owned_by: "google" },
 
-  // Anthropic — Claude 3
-  { id: "claude-3-opus-20240229", object: "model", owned_by: "anthropic" },
-  { id: "claude-3-sonnet-20240229", object: "model", owned_by: "anthropic" },
-  { id: "claude-3-haiku-20240307", object: "model", owned_by: "anthropic" },
+  // ── Anthropic (7 models) — all Premium ───────────────────────────────────
+  { id: "claude-sonnet-4",   object: "model", owned_by: "anthropic" },
+  { id: "claude-opus-4",     object: "model", owned_by: "anthropic" },
+  { id: "claude-sonnet-4-6", object: "model", owned_by: "anthropic" },
+  { id: "claude-opus-4-6",   object: "model", owned_by: "anthropic" },
+  { id: "claude-sonnet-4-5", object: "model", owned_by: "anthropic" },
+  { id: "claude-opus-4-5",   object: "model", owned_by: "anthropic" },
+  { id: "claude-haiku-4-5",  object: "model", owned_by: "anthropic" },
 
-  // Google — Gemini
-  { id: "gemini-2.5-flash", object: "model", owned_by: "google" },
-  { id: "gemini-2.0-flash", object: "model", owned_by: "google" },
-  { id: "gemini-2.0-flash-lite", object: "model", owned_by: "google" },
-  { id: "gemini-1.5-pro", object: "model", owned_by: "google" },
-  { id: "gemini-1.5-flash", object: "model", owned_by: "google" },
-  { id: "gemini-1.5-flash-8b", object: "model", owned_by: "google" },
-  { id: "gemini-pro", object: "model", owned_by: "google" },
+  // ── Meta (4 models) — all Free ───────────────────────────────────────────
+  { id: "llama-4-scout-17b-16e-instruct", object: "model", owned_by: "meta" },
+  { id: "llama-3.3-70b-versatile",        object: "model", owned_by: "meta" },
+  { id: "llama-3.1-8b-instant",           object: "model", owned_by: "meta" },
+  { id: "llama-guard-4-12b",              object: "model", owned_by: "meta" },
 
-  // Google — Embeddings
-  { id: "text-embedding-004", object: "model", owned_by: "google" },
+  // ── Sarvam (3 models) ────────────────────────────────────────────────────
+  { id: "sarvam-m",   object: "model", owned_by: "sarvam" }, // Free
+  { id: "sarvam-stt", object: "model", owned_by: "sarvam" }, // Premium — Speech to Text
+  { id: "sarvam-tts", object: "model", owned_by: "sarvam" }, // Premium — Text to Speech
 
-  // Meta — Llama 3
-  { id: "llama-3.3-70b-instruct", object: "model", owned_by: "meta" },
-  { id: "llama-3.1-405b-instruct", object: "model", owned_by: "meta" },
-  { id: "llama-3.1-70b-instruct", object: "model", owned_by: "meta" },
-  { id: "llama-3.1-8b-instruct", object: "model", owned_by: "meta" },
-  { id: "llama-3-70b-instruct", object: "model", owned_by: "meta" },
-  { id: "llama-3-8b-instruct", object: "model", owned_by: "meta" },
-  { id: "llama-3.2-11b-vision-instruct", object: "model", owned_by: "meta" },
-  { id: "llama-3.2-90b-vision-instruct", object: "model", owned_by: "meta" },
+  // ── Groq (2 models) — all Free ───────────────────────────────────────────
+  { id: "groq/compound",      object: "model", owned_by: "groq" },
+  { id: "groq/compound-mini", object: "model", owned_by: "groq" },
 
-  // Mistral
-  { id: "mistral-large-latest", object: "model", owned_by: "mistral" },
-  { id: "mistral-medium-latest", object: "model", owned_by: "mistral" },
-  { id: "mistral-small-latest", object: "model", owned_by: "mistral" },
-  { id: "mistral-7b-instruct", object: "model", owned_by: "mistral" },
-  { id: "mixtral-8x7b-instruct", object: "model", owned_by: "mistral" },
-  { id: "mixtral-8x22b-instruct", object: "model", owned_by: "mistral" },
-  { id: "codestral-latest", object: "model", owned_by: "mistral" },
-  { id: "pixtral-12b-2409", object: "model", owned_by: "mistral" },
+  // ── Alibaba (1 model) — Free ─────────────────────────────────────────────
+  { id: "qwen/qwen3-32b", object: "model", owned_by: "alibaba" },
 
-  // DeepSeek
-  { id: "deepseek-r1", object: "model", owned_by: "deepseek" },
-  { id: "deepseek-v3", object: "model", owned_by: "deepseek" },
-  { id: "deepseek-chat", object: "model", owned_by: "deepseek" },
-  { id: "deepseek-coder", object: "model", owned_by: "deepseek" },
-  { id: "deepseek-r1-distill-llama-70b", object: "model", owned_by: "deepseek" },
-
-  // xAI — Grok
-  { id: "grok-2-1212", object: "model", owned_by: "xai" },
-  { id: "grok-2-vision-1212", object: "model", owned_by: "xai" },
-  { id: "grok-beta", object: "model", owned_by: "xai" },
-
-  // Cohere
-  { id: "command-r-plus", object: "model", owned_by: "cohere" },
-  { id: "command-r", object: "model", owned_by: "cohere" },
-  { id: "command-light", object: "model", owned_by: "cohere" },
-  { id: "embed-english-v3.0", object: "model", owned_by: "cohere" },
-  { id: "embed-multilingual-v3.0", object: "model", owned_by: "cohere" },
-
-  // Stability AI — Image
-  { id: "stable-diffusion-3", object: "model", owned_by: "stability" },
-  { id: "stable-diffusion-xl-1024-v1-0", object: "model", owned_by: "stability" },
-  { id: "stable-image-ultra", object: "model", owned_by: "stability" },
+  // ── Together (1 model) — Free ────────────────────────────────────────────
+  { id: "togethercomputer/m2-bert-80m-32k-retrieval", object: "model", owned_by: "together" },
 ];
 
 export const FALLBACK_MODEL_IDS = new Set(FALLBACK_MODELS.map((m) => m.id));
