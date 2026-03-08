@@ -11,95 +11,94 @@ const CACHE_KEY = "euri_model_status_cache";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ---------------------------------------------------------------------------
-// Curated deprecation data — used as instant hints before live check
+// Curated deprecation data — used as instant hints before live check.
+// All 46 models currently listed on euron.one/euri (March 2026) are ACTIVE.
+// This list is used only for models the live API may still return that are
+// known to be deprecated upstream.
 // ---------------------------------------------------------------------------
 export const KNOWN_DEPRECATED: Record<string, { reason: string; replacement?: string }> = {
-  // Google Gemini
+  // Google — older Gemini versions deprecated March 2026
   "gemini-pro": {
-    reason: "Deprecated — shut down March 9 2026 per Google's announcement.",
+    reason: "Deprecated — shut down March 9 2026. Migrate to Gemini 2.0 Flash.",
     replacement: "gemini-2.0-flash",
   },
   "gemini-pro-vision": {
-    reason: "Deprecated — Gemini Pro Vision has been replaced by multimodal Gemini 1.5+.",
-    replacement: "gemini-1.5-flash",
+    reason: "Deprecated — replaced by multimodal Gemini 2.x models.",
+    replacement: "gemini-2.0-flash",
   },
   "gemini-1.0-pro": {
-    reason: "Deprecated by Google.",
-    replacement: "gemini-1.5-pro",
+    reason: "Deprecated by Google. Use Gemini 2.5 Flash.",
+    replacement: "gemini-2.5-flash",
   },
-  "gemini-1.0-pro-vision": {
-    reason: "Deprecated by Google.",
-    replacement: "gemini-1.5-pro",
+  "gemini-1.5-pro": {
+    reason: "Superseded by Gemini 2.5 Pro.",
+    replacement: "gemini-2.5-pro",
+  },
+  "gemini-1.5-flash": {
+    reason: "Superseded by Gemini 2.5 Flash.",
+    replacement: "gemini-2.5-flash",
   },
 
-  // OpenAI
+  // OpenAI — legacy models
   "gpt-4-turbo-preview": {
-    reason: "Preview version deprecated — replaced by stable gpt-4-turbo.",
-    replacement: "gpt-4o",
+    reason: "Preview version deprecated. Use GPT-4.1 or GPT-5.",
+    replacement: "gpt-4.1",
   },
-  "gpt-3.5-turbo-16k": {
-    reason: "Deprecated — the standard gpt-3.5-turbo now supports 16K context.",
-    replacement: "gpt-3.5-turbo",
+  "gpt-4-turbo": {
+    reason: "Superseded by GPT-4.1 and GPT-5 series.",
+    replacement: "gpt-4.1",
   },
-  "gpt-3.5-turbo-0613": {
-    reason: "Snapshot deprecated by OpenAI.",
-    replacement: "gpt-3.5-turbo",
+  "gpt-4": {
+    reason: "Superseded by GPT-4.1 and GPT-5 series.",
+    replacement: "gpt-4.1",
   },
-  "gpt-3.5-turbo-16k-0613": {
-    reason: "Snapshot deprecated by OpenAI.",
-    replacement: "gpt-3.5-turbo",
+  "gpt-4o": {
+    reason: "Superseded by GPT-4.1 and GPT-5 series on Euron.",
+    replacement: "gpt-4.1",
   },
-  "gpt-4-0314": {
-    reason: "Snapshot deprecated by OpenAI.",
-    replacement: "gpt-4o",
-  },
-  "gpt-4-32k": {
-    reason: "Deprecated — GPT-4 32K has been discontinued.",
-    replacement: "gpt-4o",
-  },
-  "gpt-4-32k-0314": {
-    reason: "Snapshot deprecated by OpenAI.",
-    replacement: "gpt-4o",
+  "gpt-3.5-turbo": {
+    reason: "Legacy model. Use GPT-4.1 Nano (free) for better results.",
+    replacement: "gpt-4.1-nano",
   },
   "text-embedding-ada-002": {
-    reason: "Legacy model — newer embeddings are faster and more accurate.",
+    reason: "Legacy embedding model. Use text-embedding-3-small.",
     replacement: "text-embedding-3-small",
   },
-  "text-davinci-003": {
-    reason: "Deprecated — legacy completion model.",
-    replacement: "gpt-3.5-turbo",
-  },
-  "text-davinci-002": {
-    reason: "Deprecated — legacy completion model.",
-    replacement: "gpt-3.5-turbo",
-  },
-  "code-davinci-002": {
-    reason: "Deprecated — replaced by GPT-4 class models.",
-    replacement: "gpt-4o",
-  },
   "dall-e-2": {
-    reason: "Older generation image model — DALL·E 3 is significantly better.",
-    replacement: "dall-e-3",
+    reason: "Older generation. Not available on Euron — use newer image models.",
+    replacement: "gemini-3-pro-image-preview",
   },
 
-  // Anthropic
-  "claude-instant-1.2": {
-    reason: "Deprecated — Claude Instant has been discontinued.",
-    replacement: "claude-3-haiku-20240307",
+  // Anthropic — older Claude versions
+  "claude-3-5-sonnet-20241022": {
+    reason: "Superseded by Claude Sonnet 4 on Euron.",
+    replacement: "claude-sonnet-4",
   },
-  "claude-2.0": {
-    reason: "Deprecated — Claude 2 series is no longer recommended.",
-    replacement: "claude-3-5-haiku-20241022",
+  "claude-3-5-haiku-20241022": {
+    reason: "Superseded by Claude Haiku 4.5 on Euron.",
+    replacement: "claude-haiku-4-5",
   },
-  "claude-2.1": {
-    reason: "Deprecated — Claude 2 series is no longer recommended.",
-    replacement: "claude-3-5-haiku-20241022",
+  "claude-3-opus-20240229": {
+    reason: "Superseded by Claude Opus 4 on Euron.",
+    replacement: "claude-opus-4",
+  },
+  "claude-3-sonnet-20240229": {
+    reason: "Superseded by Claude Sonnet 4 on Euron.",
+    replacement: "claude-sonnet-4",
+  },
+  "claude-3-haiku-20240307": {
+    reason: "Superseded by Claude Haiku 4.5 on Euron.",
+    replacement: "claude-haiku-4-5",
   },
 
-  // Stability AI
-  "stable-diffusion-v1-5": {
-    reason: "Older Stability model — newer versions available.",
-    replacement: "stable-diffusion-3",
+  // Meta — older Llama versions
+  "llama-3.1-70b-instruct": {
+    reason: "Superseded by Llama 3.3 70B Versatile on Euron.",
+    replacement: "llama-3.3-70b-versatile",
+  },
+  "llama-3-70b-instruct": {
+    reason: "Superseded by Llama 4 Scout on Euron.",
+    replacement: "llama-4-scout-17b-16e-instruct",
   },
 };
 
