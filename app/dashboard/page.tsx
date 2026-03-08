@@ -208,7 +208,7 @@ export default function DashboardPage() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
               <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-semibold text-sm tracking-tight hidden sm:block">Euri Explorer</span>
+            <span className="font-bold text-base tracking-tight hidden sm:block">Euri API Explorer</span>
           </div>
 
           {/* API Key indicator */}

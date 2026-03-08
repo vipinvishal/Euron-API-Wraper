@@ -237,7 +237,7 @@ export default function LandingPage() {
           >
             <Sparkles className="w-4 h-4 text-white" />
           </motion.div>
-          <span className="font-semibold text-lg tracking-tight">Euri Explorer</span>
+          <span className="font-bold text-xl tracking-tight">Euri API Explorer</span>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <ThemeToggle />
