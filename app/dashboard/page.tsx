@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,6 +8,9 @@ import {
   RefreshCw,
   Sparkles,
   Key,
+  Star,
+  CreditCard,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,8 +21,10 @@ import { ModelDrawer } from "@/components/ModelDrawer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { categorizeModels, groupByCategory } from "@/lib/categorize-models";
 import { FALLBACK_MODELS } from "@/lib/fallback-models";
-import type { CategorizedModel, ModelCategory } from "@/lib/types";
+import type { CategorizedModel, ModelCategory, ModelPricing } from "@/lib/types";
 import { useModelStatus } from "@/hooks/useModelStatus";
+
+type PricingFilter = "all" | ModelPricing;
 
 function maskApiKey(key: string) {
   if (key.length <= 8) return "••••••••";
@@ -57,6 +62,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [selectedModel, setSelectedModel] = useState<CategorizedModel | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all");
 
   const allModelIds = useMemo(() => models.map((m) => m.id), [models]);
   const statusMap = useModelStatus(allModelIds, apiKey);
@@ -135,6 +141,9 @@ export default function DashboardPage() {
       return;
     }
     setApiKey(key);
+    // Read pricing preference saved on landing page
+    const savedPricing = localStorage.getItem("euri_pricing_filter") as PricingFilter | null;
+    if (savedPricing) setPricingFilter(savedPricing);
     fetchModels(key);
   }, [fetchModels, router, refreshKey]);
 
@@ -165,6 +174,11 @@ export default function DashboardPage() {
         ? models
         : grouped[activeCategory as ModelCategory] ?? [];
 
+    // Apply pricing filter
+    if (pricingFilter !== "all") {
+      list = list.filter((m) => m.pricing === pricingFilter);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -176,7 +190,7 @@ export default function DashboardPage() {
     }
 
     return list;
-  }, [activeCategory, models, grouped, search]);
+  }, [activeCategory, models, grouped, search, pricingFilter]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -265,14 +279,41 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Search */}
-            <div className="flex items-center gap-3">
+            {/* Search + pricing filter */}
+            <div className="flex items-center gap-3 flex-wrap">
               <SearchBar
                 value={search}
                 onChange={setSearch}
                 placeholder="Search by model name or provider..."
                 className="flex-1 max-w-sm"
               />
+
+              {/* Pricing toggle */}
+              <div className="flex items-center gap-1 p-1 rounded-lg border border-white/10 bg-background/50">
+                {([
+                  { value: "all",  label: "All",  icon: LayoutGrid, color: "text-purple-400" },
+                  { value: "free", label: "Free", icon: Star,        color: "text-green-400"  },
+                  { value: "paid", label: "Paid", icon: CreditCard,  color: "text-amber-400"  },
+                ] as { value: PricingFilter; label: string; icon: React.ElementType; color: string }[]).map(({ value, label, icon: Icon, color }) => (
+                  <motion.button
+                    key={value}
+                    onClick={() => {
+                      setPricingFilter(value);
+                      localStorage.setItem("euri_pricing_filter", value);
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                      pricingFilter === value
+                        ? "bg-card shadow-sm border border-white/15 text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className={`w-3 h-3 ${pricingFilter === value ? color : ""}`} />
+                    {label}
+                  </motion.button>
+                ))}
+              </div>
+
               {!loading && (
                 <span className="text-xs text-muted-foreground shrink-0">
                   {filteredModels.length} result{filteredModels.length !== 1 ? "s" : ""}

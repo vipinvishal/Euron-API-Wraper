@@ -5,6 +5,7 @@ import type {
   ModelProvider,
   ModelCapability,
 } from "./types";
+import { isFreModel } from "./free-models";
 
 function detectProvider(model: EuriModel): ModelProvider {
   const id = model.id.toLowerCase();
@@ -205,6 +206,7 @@ export function categorizeModels(models: EuriModel[]): CategorizedModel[] {
       provider,
       capabilities,
       contextWindow,
+      pricing: isFreModel(model.id) ? "free" : "paid",
     };
   });
 }

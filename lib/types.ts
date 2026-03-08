@@ -19,11 +19,14 @@ export type ModelCategory =
   | "code"
   | "reasoning";
 
+export type ModelPricing = "free" | "paid";
+
 export interface CategorizedModel extends EuriModel {
   category: ModelCategory;
   provider: ModelProvider;
   capabilities: ModelCapability[];
   contextWindow?: number;
+  pricing: ModelPricing;
 }
 
 export type ModelProvider =

@@ -24,11 +24,16 @@ import {
   Shield,
   Zap,
   Globe,
+  Star,
+  CreditCard,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+
+type PricingFilter = "all" | "free" | "paid";
 
 /* ─── static data ─── */
 const CATEGORY_PREVIEWS = [
@@ -170,10 +175,11 @@ function TiltCard({ children, className }: { children: React.ReactNode; classNam
 /* ─── main page ─── */
 export default function LandingPage() {
   const router = useRouter();
-  const [apiKey, setApiKey]   = useState("");
-  const [showKey, setShowKey] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [focused, setFocused] = useState(false);
+  const [apiKey, setApiKey]         = useState("");
+  const [showKey, setShowKey]       = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [focused, setFocused]       = useState(false);
+  const [pricing, setPricing]       = useState<PricingFilter>("all");
 
   const isValidKey = apiKey.trim().length > 10;
 
@@ -187,6 +193,7 @@ export default function LandingPage() {
     if (!isValidKey) return;
     setLoading(true);
     localStorage.setItem("euri_api_key", apiKey.trim());
+    localStorage.setItem("euri_pricing_filter", pricing);
     router.push("/dashboard");
   }
 
@@ -325,6 +332,33 @@ export default function LandingPage() {
                     >
                       {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
+                  </div>
+
+                  {/* Pricing filter toggle */}
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-muted-foreground font-medium">Show models</p>
+                    <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-background/50 border border-white/10">
+                      {([
+                        { value: "all",  label: "All Models", icon: LayoutGrid, color: "text-purple-400" },
+                        { value: "free", label: "Free Only",  icon: Star,        color: "text-green-400"  },
+                        { value: "paid", label: "Paid Only",  icon: CreditCard,  color: "text-amber-400"  },
+                      ] as { value: PricingFilter; label: string; icon: React.ElementType; color: string }[]).map(({ value, label, icon: Icon, color }) => (
+                        <motion.button
+                          key={value}
+                          type="button"
+                          onClick={() => setPricing(value)}
+                          whileTap={{ scale: 0.96 }}
+                          className={`relative flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            pricing === value
+                              ? "bg-card shadow-sm border border-white/15 text-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <Icon className={`w-3.5 h-3.5 ${pricing === value ? color : ""}`} />
+                          <span>{label}</span>
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
 
                   <motion.div whileHover={{ scale: isValidKey ? 1.02 : 1 }} whileTap={{ scale: 0.97 }}>

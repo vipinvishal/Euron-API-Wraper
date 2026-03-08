@@ -176,6 +176,12 @@ export function ModelCard({ model, onClick, statusEntry, index = 0 }: ModelCardP
           <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded-md", providerInfo.bgColor, providerInfo.color)}>
             {providerInfo.label}
           </span>
+          {/* Free badge */}
+          {model.pricing === "free" && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-green-500/15 text-green-400 border border-green-500/25">
+              FREE
+            </span>
+          )}
           {/* Live status */}
           <StatusBadge entry={statusEntry} />
         </div>
